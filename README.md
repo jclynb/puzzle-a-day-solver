@@ -6,5 +6,5 @@
 Uses DFS to place blocks on the game board until a winning combination is found for a given day
 
 ## To run:
-g++ -o solver calpuzzle.cpp
+g++ -o solver calpuzzle.cpp\
 ./solver Jan 1
