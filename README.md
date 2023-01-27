@@ -1,5 +1,5 @@
 # Puzzle-a-day Solver
-## Description
+## Description:
 
 [Puzzle Link](https://www.amazon.com/DragonFjord-Puzzle-Day-Original-Challenges/dp/B09BHV12QF?th=1)
 
