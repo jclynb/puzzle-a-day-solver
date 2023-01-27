@@ -1,4 +1,5 @@
 # Puzzle-a-day Solver
+![solved puzzle](https://m.media-amazon.com/images/I/61CMDUOroNL.jpg)
 ## Description:
 
 [Puzzle Link](https://www.amazon.com/DragonFjord-Puzzle-Day-Original-Challenges/dp/B09BHV12QF?th=1)
