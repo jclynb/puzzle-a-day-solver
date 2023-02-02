@@ -71,7 +71,7 @@ vector<vector<string>> boardArray = {
   {"29", "30", "31"}
 };
 
-// To help with boundary checking
+// To help with initializing the board
 unordered_map<int, int> bcmap = {
   {0, 5}, // row 0 has columns 0-5
   {1, 5},
@@ -232,7 +232,6 @@ public:
 
   void initPositions(const string month, const string day) {
     // Add all the board positions except the given month and day to available_positions
-    // FIXME: figure out if I can do this with the board constructor?
     position cur_position;
     for (int i = 0; i < 7; i++) {
       for (int j = 0; j <= bcmap[i]; j++) {
@@ -244,43 +243,10 @@ public:
       }
     }
   };
-/*
-  bool checkBC(const position &pos, const string &month, const string &day) {
-    // Check boundary conditions of the game board (x is a key of bcmap, y is in the range of bcmap, y is not negative)
-    if (bcmap.find(pos.x) == bcmap.end() || pos.y > bcmap[pos.x] || pos.y < 0) {
-      return false;
-    }
-    // also check that the position doesn't equal the given month or day
-    else if (boardArray[pos.x][pos.y] == month || boardArray[pos.x][pos.y] == day) {
-      return false;
-    }
-    return true;
-  };
 
-  bool checkOverlaps(const vector<Block> &placed) {
-    // Check if the placement results in an overlap with another placed block
-    // If the size of the set of board placements is less than the size of the vector of board placements, there is an overlap
-    if (placed.empty()) {
-      return false;
-    }
-
-    // Check for overlaps with available positions
-    //
-
-    vector<position> current_placements;
-    for (Block b : placed) {
-      vector<position> b_positions = b.getPositions();
-      current_placements.insert(current_placements.end(), b_positions.begin(), b_positions.end());
-    }
-
-    unordered_set<position, position_hash, position_comparator> s (current_placements.begin(), current_placements.end());
-    return s.size() < current_placements.size();
-
-  };
-  */
-  // flood fill until an island of 5 is found, return true
-  // return false if the island is smaller than 5
   bool floodfill(position p) {
+    // Return true if flood fill finds an island of size >= 5
+    // Return false if the island is too small for a block, and therefore the board is invalid (smallest block size is 5 spaces)
     unordered_set<position, position_hash, position_comparator> island;
     position left, right, up, down;
     stack<position> q;
@@ -316,44 +282,28 @@ public:
         q.push(down);
       }
     }
-    if (island.size() >= 1 && island.size() < 5) {
-      return false;
-    } else {
-      return true;
-    }
+    return false;
   };
 
   bool placeBlock(Block b) {
-    // Before placing, check that the block fits within the board's boundary conditions and doesn't cover the month or date.
-    // Then check that the block doesn't collide with other blocks.
-    // If the placement is valid, remove the positions from avaiable_positions, add the block to placed, remove the block from available_blocks
-   // for (position pos : b.getPositions()) {
-    //  if (!checkBC(pos, month, day)) {
-      //  return false;
-     // }
-   // }
-   //
-    // Check that all the block positions are in available_positions
+    // Before placing, check that the block fits on the board (all block positions are in board available_positions)
+    // Return false if the block doesn't fit.
+    // If the block placement is valid, remove the block's positions from avaiable_positions, add the block to placed, remove the block from available_blocks
+    // Check to see if the placement created any "islands" (regions of empty space too small for any block)
+    // If an island with a size less than 5 spaces is found, return false, otherwise the board is valid, return true
     for (position pos: b.getPositions()) {
       if (this->available_positions->find(pos) == this->available_positions->end()) {
         return false;
       }
     }
-/*
-    vector<Block> temp_placed(*this->placed);
-    temp_placed.push_back(b);
-    if (this->checkOverlaps(temp_placed)) {
-      return false;
-    }
-*/
+
     this->placed->push_back(b);
     this->available_blocks->erase(b.getID());
-    //this->available_blocks->erase(this->available_blocks->find(b.getID()));
     for (position p : b.getPositions()) {
       this->available_positions->erase(p);
     }
-   // if we haven't filled the board, check if there is an islands smaller than 5
-   // if so, the board is not valid, return false
+   // If we have placed at least 1 block and haven't filled the board, floodfill the board from each available position
+   // Floodfill returns false if an island with a size less than 5 board spaces is found
     if (!this->available_positions->empty() && this->placed->size() > 1) {
       for (position pos : *this->available_positions) {
         if (!floodfill(pos)) {
@@ -364,9 +314,10 @@ public:
   };
 
   bool checkWin() {
-    return (this->available_blocks->empty()); // (this->available_blocks->empty()) && (this->placed->size() == 8));
+    return (this->available_blocks->empty()); // (this->available_positions->empty()) && (this->placed->size() == 8));
   };
 };
+
 int main(int argc, char *argv[]) {
   // DFS approach:
   // Start by adding an empty board to the stack.
