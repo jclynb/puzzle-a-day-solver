@@ -249,37 +249,38 @@ public:
     // Return false if the island is too small for a block, and therefore the board is invalid (smallest block size is 5 spaces)
     unordered_set<position, position_hash, position_comparator> island;
     position left, right, up, down;
-    stack<position> q;
-    q.push(p);
+    stack<position> s;
+    s.push(p);
+    island.insert(p);
 
-    while (!q.empty()) {
+    while (!s.empty()) {
       if (island.size() >= 5) {
         return true;
       }
-      position curpos = q.top();
-      q.pop();
+      position curpos = s.top();
+      s.pop();
 
       left.y = right.y = curpos.y;
       left.x = curpos.x - 1;
       if (this->available_positions->find(left) != this->available_positions->end() && island.find(left) == island.end()) {
         island.insert(left);
-        q.push(left);
+        s.push(left);
       }
       right.x = curpos.x + 1;
       if (this->available_positions->find(right) != this->available_positions->end() && island.find(right) == island.end()) {
         island.insert(right);
-        q.push(right);
+        s.push(right);
       }
       up.x = down.x = curpos.x;
       up.y =curpos.y + 1;
       if (this->available_positions->find(up) != this->available_positions->end() && island.find(up) == island.end()) {
         island.insert(up);
-        q.push(up);
+        s.push(up);
       }
       down.y = curpos.y - 1;
       if (this->available_positions->find(down) != this->available_positions->end() && island.find(down) == island.end()) {
         island.insert(down);
-        q.push(down);
+        s.push(down);
       }
     }
     return false;
