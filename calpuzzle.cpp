@@ -244,7 +244,7 @@ public:
       }
     }
   };
-
+/*
   bool checkBC(const position &pos, const string &month, const string &day) {
     // Check boundary conditions of the game board (x is a key of bcmap, y is in the range of bcmap, y is not negative)
     if (bcmap.find(pos.x) == bcmap.end() || pos.y > bcmap[pos.x] || pos.y < 0) {
@@ -264,6 +264,9 @@ public:
       return false;
     }
 
+    // Check for overlaps with available positions
+    //
+
     vector<position> current_placements;
     for (Block b : placed) {
       vector<position> b_positions = b.getPositions();
@@ -274,36 +277,96 @@ public:
     return s.size() < current_placements.size();
 
   };
+  */
+  // flood fill until an island of 5 is found, return true
+  // return false if the island is smaller than 5
+  bool floodfill(position p) {
+    unordered_set<position, position_hash, position_comparator> island;
+    position left, right, up, down;
+    stack<position> q;
+    q.push(p);
 
-  bool placeBlock(Block b, const string &month, const string &day) {
+    while (!q.empty()) {
+      if (island.size() >= 5) {
+        return true;
+      }
+      position curpos = q.top();
+      q.pop();
+
+      left.y = right.y = curpos.y;
+      left.x = curpos.x - 1;
+      if (this->available_positions->find(left) != this->available_positions->end() && island.find(left) == island.end()) {
+        island.insert(left);
+        q.push(left);
+      }
+      right.x = curpos.x + 1;
+      if (this->available_positions->find(right) != this->available_positions->end() && island.find(right) == island.end()) {
+        island.insert(right);
+        q.push(right);
+      }
+      up.x = down.x = curpos.x;
+      up.y =curpos.y + 1;
+      if (this->available_positions->find(up) != this->available_positions->end() && island.find(up) == island.end()) {
+        island.insert(up);
+        q.push(up);
+      }
+      down.y = curpos.y - 1;
+      if (this->available_positions->find(down) != this->available_positions->end() && island.find(down) == island.end()) {
+        island.insert(down);
+        q.push(down);
+      }
+    }
+    if (island.size() >= 1 && island.size() < 5) {
+      return false;
+    } else {
+      return true;
+    }
+  };
+
+  bool placeBlock(Block b) {
     // Before placing, check that the block fits within the board's boundary conditions and doesn't cover the month or date.
     // Then check that the block doesn't collide with other blocks.
     // If the placement is valid, remove the positions from avaiable_positions, add the block to placed, remove the block from available_blocks
-    for (position pos : b.getPositions()) {
-      if (!checkBC(pos, month, day)) {
+   // for (position pos : b.getPositions()) {
+    //  if (!checkBC(pos, month, day)) {
+      //  return false;
+     // }
+   // }
+   //
+    // Check that all the block positions are in available_positions
+    for (position pos: b.getPositions()) {
+      if (this->available_positions->find(pos) == this->available_positions->end()) {
         return false;
       }
     }
-
+/*
     vector<Block> temp_placed(*this->placed);
     temp_placed.push_back(b);
     if (this->checkOverlaps(temp_placed)) {
       return false;
     }
-
+*/
     this->placed->push_back(b);
-    this->available_blocks->erase(this->available_blocks->find(b.getID()));
+    this->available_blocks->erase(b.getID());
+    //this->available_blocks->erase(this->available_blocks->find(b.getID()));
     for (position p : b.getPositions()) {
       this->available_positions->erase(p);
     }
-    return true;
+   // if we haven't filled the board, check if there is an islands smaller than 5
+   // if so, the board is not valid, return false
+    if (!this->available_positions->empty() && this->placed->size() > 1) {
+      for (position pos : *this->available_positions) {
+        if (!floodfill(pos)) {
+          return false;
+        }
+      }
+    } return true;
   };
 
   bool checkWin() {
-    return (this->available_positions->empty()); // (this->available_blocks->empty()) && (this->placed->size() == 8));
+    return (this->available_blocks->empty()); // (this->available_blocks->empty()) && (this->placed->size() == 8));
   };
 };
-
 int main(int argc, char *argv[]) {
   // DFS approach:
   // Start by adding an empty board to the stack.
@@ -344,7 +407,7 @@ int main(int argc, char *argv[]) {
 
         auto blk = make_shared<Block>(i.first, i.second, pos);
         auto new_board_1 = make_shared<Board>(*board);
-        if (new_board_1->placeBlock(*blk, month, day)) {
+        if (new_board_1->placeBlock(*blk)) {
           assert(new_board_1->available_blocks->size() == board->available_blocks->size() - 1);
           s.push(new_board_1);
         }
@@ -352,7 +415,7 @@ int main(int argc, char *argv[]) {
         for (int i = 0; i < 3; i++) {
           blk->rotate();
           auto new_board_2 = make_shared<Board>(*board);
-          if (new_board_2->placeBlock(*blk, month, day)) {
+          if (new_board_2->placeBlock(*blk)) {
             assert(new_board_2->available_blocks->size() == board->available_blocks->size() - 1);
             s.push(new_board_2);
           }
@@ -361,7 +424,7 @@ int main(int argc, char *argv[]) {
         if (find(asymmetrical.begin(), asymmetrical.end(), blk->getID()) != asymmetrical.end()) {
           blk->flip();
           auto new_board_3 = make_shared<Board>(*board);
-          if (new_board_3->placeBlock(*blk, month, day)) {
+          if (new_board_3->placeBlock(*blk)) {
             assert(new_board_3->available_blocks->size() == board->available_blocks->size() - 1);
             s.push(new_board_3);
           }
@@ -369,7 +432,7 @@ int main(int argc, char *argv[]) {
           for (int i = 0; i < 3; i++) {
             blk->rotate();
             auto new_board_4 = make_shared<Board>(*board);
-            if (new_board_4->placeBlock(*blk, month, day)) {
+            if (new_board_4->placeBlock(*blk)) {
               assert(new_board_4->available_blocks->size() == board->available_blocks->size() - 1);
               s.push(new_board_4);
             }
@@ -381,9 +444,9 @@ int main(int argc, char *argv[]) {
   cout << "no solution found" << "\n";
   return -1;
 };
-
 /*
-  TEST CASE FOR A JAN 1 WINNING SOLUTION
+int main(int argc, char* argv[]) {
+  // TEST CASE FOR A JAN 1 WINNING SOLUTION
   string month = argv[1];
   string day = argv[2];
 
@@ -433,14 +496,14 @@ int main(int argc, char *argv[]) {
   h.rotate();
   h.displayBlock();
 
-  board->placeBlock(a, month, day);
-  board->placeBlock(b, month, day);
-  board->placeBlock(c, month, day);
-  board->placeBlock(d, month, day);
-  board->placeBlock(e, month, day);
-  board->placeBlock(f, month, day);
-  board->placeBlock(g, month, day);
-  board->placeBlock(h, month, day);
+  board->placeBlock(a);
+  board->placeBlock(b);
+  board->placeBlock(c);
+  board->placeBlock(d);
+  board->placeBlock(e);
+  board->placeBlock(f);
+  board->placeBlock(g);
+  board->placeBlock(h);
 
   if(board->checkWin()) {
     for (Block b : *board->placed) {
@@ -448,4 +511,7 @@ int main(int argc, char *argv[]) {
     }
     return 1;
   }
+  cout << "no solution found" << "\n";
+  return -1;
+};
 */
