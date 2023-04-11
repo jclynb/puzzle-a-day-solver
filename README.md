@@ -1,12 +1,30 @@
-# Puzzle-a-day Solver
-## Description:
+# Puzzle-a-day Solver🧩
 
-[Puzzle Link](https://www.amazon.com/DragonFjord-Puzzle-Day-Original-Challenges/dp/B09BHV12QF?th=1)
+Solves [Puzzle-a-day](https://www.amazon.com/DragonFjord-Puzzle-Day-Original-Challenges/dp/B09BHV12QF?th=1) for a given date using depth-first search to place blocks on the game board until a winning combination is found.
 
-Uses DFS to place blocks on the game board until a winning combination is found for a given day
 
-## To run:
-g++ -o solver calpuzzle.cpp\
-./solver Jan 1
+## Run Locally
+
+Clone the project
+
+```bash
+  git clone git@github.com:jclynb/puzzle-a-day-solver.git
+```
+
+Go to the project directory
+
+```bash
+  cd puzzle-a-day-solver
+```
+
+Run the program
+
+```bash
+  g++ -o solver calpuzzle.cpp && ./solver Jan 1
+```
+
+
+## Screenshots
 
 ![solved puzzle](https://m.media-amazon.com/images/I/61CMDUOroNL.jpg)
+
