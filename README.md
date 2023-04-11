@@ -24,7 +24,7 @@ Run the program
 ```
 
 
-## Screenshots
+## The board
 
 ![solved puzzle](https://m.media-amazon.com/images/I/61CMDUOroNL.jpg)
 
