@@ -22,7 +22,8 @@ Go to the project directory
 Run the program
 
 ```bash
-  clang++ -o solver calpuzzle.cpp && ./solver Jan 1
+  make
+  ./solver Jan 1
 ```
 
 
