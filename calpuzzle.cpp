@@ -7,6 +7,7 @@
 #include <stack>
 #include <cassert>
 #include <memory>
+#include <thread>
 using namespace std;
 
 // Block positions (x, y) oriented at top left labeled "2"
@@ -59,6 +60,17 @@ vector<vector<char>> chair = {
     {1, 1},
     {1, 1}
 };
+
+unordered_map<string, vector<vector<char>>> block_map = {
+        {"rec", rec},
+        {"z", z},
+        {"L", L},
+        {"corner", corner},
+        {"lightning", lightning},
+        {"horseshoe", horseshoe},
+        {"cactus", cactus},
+        {"chair", chair}
+  };
 
 // 43 board positions
 vector<vector<string>> boardArray = {
@@ -203,31 +215,30 @@ public:
 
 class Board {
 public:
-  shared_ptr<vector<Block>> placed; // Keeps track of all the blocks we have placed
-  shared_ptr<unordered_set<position, position_hash, position_comparator>> available_positions; // Keeps track of positions left on board
-  shared_ptr<unordered_map<string, vector<vector<char>>>> available_blocks; // Keeps track of unplaced blocks
+  vector<Block> placed; // Keeps track of all the blocks we have placed
+  unordered_set<position, position_hash, position_comparator> available_positions; // Keeps track of positions left on board
+  vector<string> available_blocks; // Keeps track of unplaced blocks
 
   Board() {
-    placed = make_shared<vector<Block>>();
-    available_positions = make_shared<unordered_set<position, position_hash, position_comparator>>();
-    available_blocks = make_shared<unordered_map<string, vector<vector<char>>>>();
-    *available_blocks = {
-        {"rec", rec},
-        {"z", z},
-        {"L", L},
-        {"corner", corner},
-        {"lightning", lightning},
-        {"horseshoe", horseshoe},
-        {"cactus", cactus},
-        {"chair", chair}
-    };
+    placed = vector<Block>();
+    available_positions = unordered_set<position, position_hash, position_comparator>();
+    available_blocks = vector<string>(
+                                      {"rec",
+                                       "z",
+                                       "L",
+                                       "corner",
+                                       "lightning",
+                                       "horseshoe",
+                                       "cactus",
+                                       "chair"
+                                      });
   };
 
   // Copy constructor
   Board(const Board &b) {
-    placed = make_shared<vector<Block>>(*b.placed);
-    available_positions = make_shared<unordered_set<position, position_hash, position_comparator>>(*b.available_positions);
-    available_blocks = make_shared<unordered_map<string, vector<vector<char>>>>(*b.available_blocks);
+    placed = vector<Block>(b.placed);
+    available_positions = unordered_set<position, position_hash, position_comparator>(b.available_positions);
+    available_blocks = vector<string>(b.available_blocks);
   };
 
   void initPositions(const string month, const string day) {
@@ -238,7 +249,7 @@ public:
         if (boardArray[i][j] != month && boardArray[i][j] != day) {
           cur_position.x = i;
           cur_position.y = j;
-          this->available_positions->insert(cur_position);
+          this->available_positions.insert(cur_position);
         }
       }
     }
@@ -262,23 +273,23 @@ public:
 
       left.y = right.y = curpos.y;
       left.x = curpos.x - 1;
-      if (this->available_positions->find(left) != this->available_positions->end() && island.find(left) == island.end()) {
+      if (this->available_positions.find(left) != this->available_positions.end() && island.find(left) == island.end()) {
         island.insert(left);
         s.push(left);
       }
       right.x = curpos.x + 1;
-      if (this->available_positions->find(right) != this->available_positions->end() && island.find(right) == island.end()) {
+      if (this->available_positions.find(right) != this->available_positions.end() && island.find(right) == island.end()) {
         island.insert(right);
         s.push(right);
       }
       up.x = down.x = curpos.x;
       up.y =curpos.y + 1;
-      if (this->available_positions->find(up) != this->available_positions->end() && island.find(up) == island.end()) {
+      if (this->available_positions.find(up) != this->available_positions.end() && island.find(up) == island.end()) {
         island.insert(up);
         s.push(up);
       }
       down.y = curpos.y - 1;
-      if (this->available_positions->find(down) != this->available_positions->end() && island.find(down) == island.end()) {
+      if (this->available_positions.find(down) != this->available_positions.end() && island.find(down) == island.end()) {
         island.insert(down);
         s.push(down);
       }
@@ -293,20 +304,23 @@ public:
     // Check to see if the placement created any "islands" (regions of empty space too small for any block)
     // If an island with a size less than 5 spaces is found, return false, otherwise the board is valid, return true
     for (position pos: b.getPositions()) {
-      if (this->available_positions->find(pos) == this->available_positions->end()) {
+      if (this->available_positions.find(pos) == this->available_positions.end()) {
         return false;
       }
     }
 
-    this->placed->push_back(b);
-    this->available_blocks->erase(b.getID());
+    this->placed.push_back(b);
+    auto block_id = find(this->available_blocks.begin(), this->available_blocks.end(), b.getID());
+    if (block_id != this->available_blocks.end()) {
+        this->available_blocks.erase(block_id);
+    }
     for (position p : b.getPositions()) {
-      this->available_positions->erase(p);
+      this->available_positions.erase(p);
     }
    // If we have placed at least 1 block and haven't filled the board, floodfill the board from each available position
    // Floodfill returns false if an island with a size less than 5 board spaces is found
-    if (!this->available_positions->empty() && this->placed->size() > 1) {
-      for (position pos : *this->available_positions) {
+    if (!this->available_positions.empty() && this->placed.size() > 1) {
+      for (position pos : this->available_positions) {
         if (!floodfill(pos)) {
           return false;
         }
@@ -315,9 +329,81 @@ public:
   };
 
   bool checkWin() {
-    return (this->available_blocks->empty()); // (this->available_positions->empty()) && (this->placed->size() == 8));
+    return (this->available_blocks.empty()); // (this->available_positions->empty()) && (this->placed->size() == 8));
   };
 };
+
+bool dfs(string month, string day, int start, int end) {
+
+  vector<string> asymmetrical = {"cactus", "chair", "lightning", "L", "z"}; // Asymmetrical blocks can be flipped
+  auto board = make_shared<Board>();
+  board->initPositions(month, day);
+  bool finished_designated_blocks = false;
+
+  stack<shared_ptr<Board>> s;
+  s.push(board);
+
+  while (!s.empty()) {
+    auto board = s.top();
+    s.pop();
+
+    finished_designated_blocks = board->available_blocks.size() <= 8 - (end-start) ? true : finished_designated_blocks;
+    if (finished_designated_blocks) {
+      start = 0;
+      end = board->available_blocks.size();
+    }
+
+    if (board->checkWin()) {
+      for (Block b : board->placed) {
+        b.displayBlock();
+      }
+      cout << "solution found" << "\n";
+      return true;
+    }
+
+    for (int b = start; b < end; b++) {
+      for (const auto pos : board->available_positions) {
+        string block_id = board->available_blocks.at(b);
+        auto blk = make_shared<Block>(block_id, block_map[block_id], pos);
+        auto new_board_1 = make_shared<Board>(*board);
+        if (new_board_1->placeBlock(*blk)) {
+          assert(new_board_1->available_blocks.size() == board->available_blocks.size() - 1);
+          s.push(new_board_1);
+        }
+        // rotate 3 times
+        for (int i = 0; i < 3; i++) {
+          blk->rotate();
+          auto new_board_2 = make_shared<Board>(*board);
+          if (new_board_2->placeBlock(*blk)) {
+            assert(new_board_2->available_blocks.size() == board->available_blocks.size() - 1);
+            s.push(new_board_2);
+          }
+        }
+        // only need to flip asymmetrical blocks
+        if (find(asymmetrical.begin(), asymmetrical.end(), blk->getID()) != asymmetrical.end()) {
+          blk->flip();
+          auto new_board_3 = make_shared<Board>(*board);
+          if (new_board_3->placeBlock(*blk)) {
+            assert(new_board_3->available_blocks.size() == board->available_blocks.size() - 1);
+            s.push(new_board_3);
+          }
+          // rotate 3 times
+          for (int i = 0; i < 3; i++) {
+            blk->rotate();
+            auto new_board_4 = make_shared<Board>(*board);
+            if (new_board_4->placeBlock(*blk)) {
+              assert(new_board_4->available_blocks.size() == board->available_blocks.size() - 1);
+              s.push(new_board_4);
+            }
+          }
+        }
+      }
+    }
+  }
+  cout << "no solution found" << "\n";
+  return false;
+};
+
 
 int main(int argc, char *argv[]) {
   // DFS approach:
@@ -332,69 +418,24 @@ int main(int argc, char *argv[]) {
     cerr << "incorrect input, type a month and date" << "\n";
     return -1;
   }
+
   string month = argv[1];
   string day = argv[2];
-  vector<string> asymmetrical = {"cactus", "chair", "lightning", "L", "z"};
 
-  auto board = make_shared<Board>();
-  board->initPositions(month, day);
-
-  stack<shared_ptr<Board>> s;
-  s.push(board);
-
-  while (!s.empty()) {
-    auto board = s.top();
-    s.pop();
-
-    if (board->checkWin()) {
-      for (Block b : *board->placed) {
-        b.displayBlock();
-      }
-      cout << "solution found" << "\n";
-      return 1;
-    }
-
-    for (auto i : *board->available_blocks) {
-      for (const auto pos : *board->available_positions) {
-
-        auto blk = make_shared<Block>(i.first, i.second, pos);
-        auto new_board_1 = make_shared<Board>(*board);
-        if (new_board_1->placeBlock(*blk)) {
-          assert(new_board_1->available_blocks->size() == board->available_blocks->size() - 1);
-          s.push(new_board_1);
-        }
-        // rotate 3 times
-        for (int i = 0; i < 3; i++) {
-          blk->rotate();
-          auto new_board_2 = make_shared<Board>(*board);
-          if (new_board_2->placeBlock(*blk)) {
-            assert(new_board_2->available_blocks->size() == board->available_blocks->size() - 1);
-            s.push(new_board_2);
-          }
-        }
-        // only need to flip asymmetrical blocks
-        if (find(asymmetrical.begin(), asymmetrical.end(), blk->getID()) != asymmetrical.end()) {
-          blk->flip();
-          auto new_board_3 = make_shared<Board>(*board);
-          if (new_board_3->placeBlock(*blk)) {
-            assert(new_board_3->available_blocks->size() == board->available_blocks->size() - 1);
-            s.push(new_board_3);
-          }
-          // rotate 3 times
-          for (int i = 0; i < 3; i++) {
-            blk->rotate();
-            auto new_board_4 = make_shared<Board>(*board);
-            if (new_board_4->placeBlock(*blk)) {
-              assert(new_board_4->available_blocks->size() == board->available_blocks->size() - 1);
-              s.push(new_board_4);
-            }
-          }
-        }
-      }
-    }
+  // Spawn threads to solve the puzzle in parallel
+  vector<thread> threads;
+  int num_threads = thread::hardware_concurrency();
+  for (int i = 0; i < num_threads; i++) {
+    int start_blk = i * 8 / num_threads;
+    int end_blk = (i + 1) * 8 / num_threads;
+    threads.emplace_back(std::thread (dfs, month, day, start_blk, end_blk));
   }
-  cout << "no solution found" << "\n";
-  return -1;
+
+  // Wait for threads to finish
+  for (auto &thread : threads) {
+    thread.join();
+  }
+  return 1;
 };
 /*
 int main(int argc, char* argv[]) {
