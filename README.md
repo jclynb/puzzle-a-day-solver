@@ -22,7 +22,7 @@ Go to the project directory
 Run the program
 
 ```bash
-  g++ -o solver calpuzzle.cpp && ./solver Jan 1
+  clang++ -o solver calpuzzle.cpp && ./solver Jan 1
 ```
 
 
