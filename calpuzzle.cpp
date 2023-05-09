@@ -8,6 +8,8 @@
 #include <cassert>
 #include <memory>
 #include <thread>
+#include <chrono>
+
 using namespace std;
 
 // Block positions (x, y) oriented at top left labeled "2"
@@ -113,7 +115,7 @@ public:
     auto hash1 = hash<int>()(p.x);
     auto hash2 = hash<int>()(p.y);
 
-    if (hash1 != hash2) { // FIXME: figure out if xor makes sense here
+    if (hash1 != hash2) {
       return hash1 ^ hash2;
     }
 
@@ -334,7 +336,7 @@ public:
 };
 
 bool dfs(string month, string day, int start, int end) {
-
+  auto start_time = chrono::high_resolution_clock::now(); // Start measuring time
   vector<string> asymmetrical = {"cactus", "chair", "lightning", "L", "z"}; // Asymmetrical blocks can be flipped
   auto board = make_shared<Board>();
   board->initPositions(month, day);
@@ -354,10 +356,12 @@ bool dfs(string month, string day, int start, int end) {
     }
 
     if (board->checkWin()) {
+      auto end_time = chrono::high_resolution_clock::now(); // Stop measuring time
+      auto duration = chrono::duration_cast<chrono::seconds>(end_time - start_time);
+      cout << "Found a solution in " << duration.count() << " seconds" << endl;
       for (Block b : board->placed) {
         b.displayBlock();
       }
-      cout << "solution found" << "\n";
       return true;
     }
 
