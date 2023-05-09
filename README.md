@@ -4,6 +4,8 @@ Solves [Puzzle-a-day](https://www.amazon.com/DragonFjord-Puzzle-Day-Original-Cha
 
 This solver also uses a straightforward parallelization strategy to search large chunks of the search space with distinct cores. Flood-fill is used to minimize the search space. These additions reduced the search time from over an hour for specific dates to only minutes.
 
+Locks are used to ensure thread safety and to allow the program to exit gracefully once the first thread finds a solution. The first thread sets a flag to signal to other threads to exit, and locks and condition variables are used to coordinate the exit of all threads.
+
 
 ## Run Locally
 
