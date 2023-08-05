@@ -2,12 +2,11 @@
 #include "block.h"
 #include "board.h"
 
-Solver::Solver() {
-    std::mutex mtx;
-    std::condition_variable cv;
-    bool solved = false;
-    bool exit_program = false;
-}
+Solver::Solver() : mtx(),
+                   cv(),
+                   solved(false),
+                   exit_program(false)
+{}
 
 int Solver::findSolution(std::string month, std::string day) {
     // Spawn threads to solve the puzzle in parallel
